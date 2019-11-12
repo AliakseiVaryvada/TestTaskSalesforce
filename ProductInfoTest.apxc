@@ -1,0 +1,273 @@
+@isTest 
+public class ProductInfoTest {
+	@isTest public static void testDel(){
+    
+    	List<Product__c> beforeDel = new List<Product__c>();
+    	List<Product__c> afterDel = new List<Product__c>(); 
+    	ProductInfoController cont = new ProductInfoController();
+        cont.delName = 'test';
+    	cont.delDate = date.today();
+        
+        beforeDel = [SELECT Name FROM Product__c];
+    
+    	Product__c prod1 = new Product__c(Name = cont.delName, Price__c = 2,
+                                          Quantity__c = 2, Type__c = 'type',
+                                  		  Date_Added__c = date.today(), Release_Date__c = date.today());
+    	insert prod1;
+    	cont.delNameProduct(); 
+    
+    	Product__c prod2 = new Product__c(Name = 'AnyName', Price__c = 2,
+                                          Quantity__c = 2, Type__c = 'type',
+                                  		  Date_Added__c = date.today(), Release_Date__c = date.today());
+    	insert prod2;
+    	cont.delDateProduct();
+   
+    	afterDel = [SELECT Name FROM Product__c];
+    	System.assertEquals(beforeDel, afterDel, 'List before == list after insert and delete product');
+        
+        cont.delName = null;
+        cont.delNameProduct();
+            System.assertEquals(true, cont.detectMess, 'Field is empty.');
+        cont.delDate = null;
+        cont.delDateProduct();
+            System.assertEquals(true, cont.detectMess, 'Field is empty.');
+        
+
+    }
+    
+    @isTest public static void testSort(){
+        ProductInfoController cont = new ProductInfoController();
+        cont.sortDirection = 'asc';
+        cont.sortByName();
+        cont.sortByName();
+        System.assertEquals('asc', cont.sortDirection);
+        
+        cont.sortByPrice();
+        cont.sortByPrice();
+        System.assertEquals('asc', cont.sortDirection);
+        
+        cont.sortByQuantity();
+        cont.sortByQuantity();
+        System.assertEquals('asc', cont.sortDirection);
+        
+        cont.sortByType();
+        cont.sortByType();
+        System.assertEquals('asc', cont.sortDirection);
+        
+        cont.sortByDateAdded();
+        cont.sortByDateAdded();
+        System.assertEquals('asc', cont.sortDirection);
+        
+        cont.sortByRelaseDate();
+        cont.sortByRelaseDate();
+        System.assertEquals('asc', cont.sortDirection);
+        
+        cont.sortByAvaliability();
+        cont.sortByAvaliability();
+        System.assertEquals('asc', cont.sortDirection);
+        
+    }
+    
+     @isTest public static void testRowSizeSet(){
+         ProductInfoController cont = new ProductInfoController();
+         cont.rowSize = 0;
+         cont.rowSizeSet();
+         System.assertEquals(true, cont.detectMess);
+         
+         cont.rowSize = 20;
+         cont.rowSizeSet();
+         System.assertEquals(20, cont.list_Size);
+         System.assertEquals(false, cont.detectMess);
+         
+         cont.rowSize = 60;
+         cont.rowSizeSet();
+         System.assertEquals(true, cont.detectMess);
+         
+     }
+    
+      @isTest public static void testSaveEdit(){
+         ProductInfoController cont = new ProductInfoController();
+         List<Product__c> results = new List<Product__c>();
+         boolean flagUp = false;
+         Product__c prod1 = new Product__c(Name = 'Test', Price__c = 2,
+                                          Quantity__c = 2, Type__c = 'type',
+                                  		  Date_Added__c = date.today(), Release_Date__c = date.today());
+         insert prod1;
+         Product__c beforeUp = [SELECT Name, Price__c FROM Product__c WHERE Name = 'Test'];
+         beforeUp.Price__c = 5;
+         results.add(beforeUp); 
+         cont.saveEdit();
+         Product__c afterUp = [SELECT Name, Price__c FROM Product__c WHERE Name = 'Test'];
+         if(afterUp != beforeUp){
+              flagUp = true;
+         }
+         System.assertEquals(true, flagUp, 'Update method.');
+      }
+    
+    @isTest public static void testAddProduct(){
+         ProductInfoController cont = new ProductInfoController();
+         List<Product__c> beforeAdd = new List<Product__c>();
+    	 List<Product__c> afterAdd = new List<Product__c>();
+        
+         beforeAdd = [SELECT Id FROM Product__c];
+         Product__c prod1 = new Product__c(Name = 'Test', Price__c = 2,
+                                          Quantity__c = 2, Type__c = 'type',
+                                  		  Date_Added__c = date.today(), Release_Date__c = date.today());
+         cont.addProduct();
+    	 afterAdd = [SELECT Id FROM Product__c];
+        
+         System.assertEquals(null, cont.inName, 'Add method.');
+         System.assertEquals(null, cont.inPrice, 'Add method.');
+         System.assertEquals(null, cont.inQuantity, 'Add method.');
+         System.assertEquals(null, cont.inType, 'Add method.');
+         System.assertEquals(null, cont.inDateAdded, 'Add method.');
+         System.assertEquals(null, cont.inReleaseDate, 'Add method.');
+    
+    }
+    
+    @isTest public static void testGetProducts(){
+    	ProductInfoController cont = new ProductInfoController();
+        List<Product__c> results = new List<Product__c>();
+        List<Product__c> beforeGet = new List<Product__c>();
+        Integer total = 0;
+        Product__c prod1 = new Product__c(Name = 'Test', Price__c = 2,
+                                          Quantity__c = 2, Type__c = 'type',
+                                  		  Date_Added__c = date.today(), Release_Date__c = date.today());
+        insert prod1;
+        
+        beforeGet = [SELECT Name, Price__c, Quantity__c, Type__c, Date_Added__c, Release_Date__c, Product_Availability__c 
+                     FROM Product__c]; 
+        
+        total = [select count() from Product__c];
+        cont.query = null;
+        cont.getProducts();
+        results = Database.query(
+        	'SELECT Name, Price__c, Quantity__c, Type__c, Date_Added__c, Release_Date__c, Product_Availability__c ' +
+        	'FROM Product__c '); 
+      	cont.total_size = [select count() from Product__c];
+        System.assertEquals(results, beforeGet, 'Get method.');   
+    }
+    
+    @isTest public static void testPagination(){
+        ProductInfoController cont = new ProductInfoController();
+        cont.counter = 0;
+        cont.getDisablePrevious();
+        System.assertEquals(true, cont.getDisablePrevious(), 'getDisablePrevious');
+        
+        cont.counter = 10;
+        cont.getDisablePrevious();
+        System.assertEquals(false, cont.getDisablePrevious(), 'getDisablePrevious');
+
+        cont.Beginning();
+        System.assertEquals(0, cont.counter, 'Begining');
+        System.assertEquals('0', cont.count, 'Begining');
+        
+        Integer prevCounter = cont.counter - cont.list_size;
+        String prevCount = String.valueOf(prevCounter);
+        cont.Previous();
+        System.assertEquals(prevCounter, cont.counter, 'Previous');
+        System.assertEquals(prevCount, cont.count, 'Previous');
+        
+        Integer nextCounter = cont.counter + cont.list_size;
+        String nextCount = String.valueOf(nextCounter);
+        cont.Next();
+        System.assertEquals(nextCounter, cont.counter, 'Next');
+        System.assertEquals(nextCount, cont.count, 'Next');
+        
+        Integer endCounter = cont.total_size - math.mod(cont.total_size, cont.list_size);
+        String endCount = String.valueOf(endCounter);
+		cont.End();       
+        System.assertEquals(endCounter, cont.counter, 'End');
+        System.assertEquals(endCount, cont.count, 'End');
+        
+        cont.counter = 0;
+        System.assertEquals(true, cont.getDisablePrevious(), 'getDisabledPrevious');
+        
+        cont.counter = 5;
+        System.assertEquals(false, cont.getDisablePrevious(), 'getDisabledPrevious');
+        
+        cont.list_size = 10;
+        cont.goPage = 5;
+        cont.total_size = 100;
+        cont.goToPage();
+        System.assertEquals('41', cont.count, 'Go to page');
+        
+        
+        cont.goPage = 15;
+        cont.goToPage();
+        System.assertEquals('1', cont.count, 'Wrong goPage');
+        
+        cont.goPage = -5;
+        cont.goToPage();
+        System.assertEquals('1', cont.count, 'Wrong goPage');
+        
+        System.assertEquals(100, cont.getTotal_size(), 'GetTotal_size');
+        
+        cont.counter = 100;
+    	cont.getPageNumber(); 
+        System.assertEquals(11, cont.getPageNumber(), 'Get page number');
+        
+        cont.list_size = 5;
+        System.assertEquals(20, cont.getTotalPages(), 'Get Total Pages true');
+        
+        cont.list_size = 8;
+        System.assertEquals(13, cont.getTotalPages(), 'Get Total Pages false block');
+        
+        cont.counter = 5;
+        cont.list_size = 10;
+        cont.total_size = 8;
+        System.assertEquals(true, cont.getDisableNext(), 'getDisableNext');
+        
+        cont.total_size = 20;
+        System.assertEquals(false, cont.getDisableNext(), 'getDisableNext');
+     
+     }
+ @isTest public static void testSearchProductName(){
+     ProductInfoController cont = new ProductInfoController();
+     boolean isNull = true;
+     cont.searchName = 'Test';
+     cont.query = null;
+     cont.searchProductName();
+     if(cont.query != null){
+         isNull = false;
+         System.assertEquals(false, isNull, 'searchProductName');
+     } 
+     cont.searchName = '';
+     cont.query = null;
+     cont.searchProductName();
+     if(cont.query == null){
+     	System.assertEquals(true, cont.detectMess, 'searchProductName');
+     }
+ }
+    @isTest public static void testSearchProductDate(){
+     ProductInfoController cont = new ProductInfoController();
+     boolean isNull = true;
+     cont.fromDate = Date.today();
+     cont.toDate = Date.today();
+     cont.query = null;
+     cont.searchProductDate();
+     if(cont.query != null){
+         isNull = false;
+         System.assertEquals(false, isNull, 'searchProductName');
+     } 
+     cont.fromDate = null;
+     cont.toDate = null;
+     cont.query = null;
+     cont.searchProductDate();
+     if(cont.query == null){
+     	System.assertEquals(true, cont.detectMess, 'searchProductName');
+     }
+ }
+    @isTest public static void testGoFullTable(){
+     ProductInfoController cont = new ProductInfoController();
+     cont.goFullTable();
+	 System.assertEquals(null, cont.query, 'searchProductName');
+     System.assertEquals(0, cont.counter, 'searchProductName');
+     System.assertEquals(5, cont.list_size, 'searchProductName');
+     System.assertEquals(0, cont.total_size, 'searchProductName');
+    }    
+	@isTest public static void testGeResults(){
+     ProductInfoController cont = new ProductInfoController();
+     System.assertEquals(cont.results, cont.getresults(), 'searchProductName');    
+}  
+}

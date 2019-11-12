@@ -1,0 +1,410 @@
+public with sharing class ProductInfoController {
+    
+    public List<Product__c> results {get;set;} //Main list with sobjects
+    public String sortOrder = 'Name'; // Var. and default value for order sort
+    public String sortDirection = 'DESC'; // Var. and default value for sort direction
+    public Integer counter = 0;  //keeps track of the offset
+    public integer list_size = 5; //sets the page size or number of rows
+    public integer total_size = 0; //used to show user the total size of the list
+    public String lim = String.valueOf(list_size); //string value for dynamic query
+    public String count = String.valueOf(counter);//string value for dynamic query
+    public Boolean detectMess = false; // Var. for check exception and message. Used in test. 
+    public String query = null; //This var used for change table mode in search . Null-full table.
+    
+    public String inName{get;set;} // var for add products 
+    public Integer inPrice{get;set;}
+    public Integer inQuantity{get;set;}
+    public String inType{get;set;}
+    public Date inDateAdded{get;set;}
+    public Date inReleaseDate{get;set;}
+    //public Boolean inAvailble{get; set;}  
+    public String delName{get;set;} // var for delete with name
+    
+    public Date delDate{get;set;} // var for delete with date
+    public Integer rowSize{get;set;} // User input rows number
+    public String searchName{get;set;}// name for search
+    
+    
+    public Date fromDate {get;set;} // from date for search
+    public Date toDate {get;set;}// to date for search
+    
+    public Integer goPage{get;set;} //user input for change page
+
+
+	public List<Product__c> getProducts() {  //fill main list  
+       
+        if (query == null){
+       results = Database.query(
+        'SELECT Name, Price__c, Quantity__c, Type__c, Date_Added__c, Release_Date__c, Product_Availability__c ' +
+        'FROM Product__c ' +
+        'ORDER BY ' + sortOrder + ' ' + sortDirection + ' ' +
+		'LIMIT '+ lim + ' ' +
+        'OFFSET ' + count
+       ); 
+            total_size = [select count() from Product__c];
+    }else{
+        results = Database.query(query);   // search case
+        System.debug(query + ' = query');
+    }
+        
+    return results;
+        
+    }
+
+
+     public Boolean getDisablePrevious() { 
+      //this will disable the previous and beginning buttons in pagination
+      if (counter>0) return false; else return true;
+   	}
+
+   	  public Boolean getDisableNext() { //this will disable the next and end buttons
+      if (counter + list_size < total_size) return false; else return true;
+    }
+
+
+     public PageReference Beginning() { //user clicked beginning
+      counter = 0;
+      count = String.valueOf(counter); 
+        if (query != null){
+            selectSearch(); // search case
+        }
+      return null;
+    }
+    public PageReference Previous() { //user clicked previous button
+      counter -= list_size;
+      count = String.valueOf(counter);
+ 
+        	if (query != null){
+            selectSearch();
+        }
+        
+      return null;
+   }
+    public PageReference Next() { //user clicked next button
+      counter += list_size;
+      count = String.valueOf(counter);
+          
+        if (query != null){
+            selectSearch(); // search case
+        }
+      return null;
+   }
+    public PageReference End() { 
+      //user clicked end
+      counter = total_size - math.mod(total_size, list_size);
+         count = String.valueOf(counter);
+         system.debug('total size = ' + total_size + 'list size =' + list_size +'counter= '+ counter );
+ 		if (query != null){
+            selectSearch();
+        }
+      return null;
+   }
+
+    public void selectSearch(){ // this method used for padination and sort in main table in search cases
+        if (!String.isBlank(searchName))   
+			searchProductName();
+        if(fromDate != null && toDate != null){
+            searchProductDate();
+            
+        }
+    }
+    
+     
+    
+    public PageReference goToPage() { 
+      //user enter page number
+	         
+      counter = (goPage - 1) * list_size + 1;
+          if(counter > total_size || counter < 0 ){
+              ApexPages.addmessage(new ApexPages.message(ApexPages.severity.ERROR,'Wrong page number. Try again.'));
+              counter = 1;
+              count = String.valueOf(counter);
+
+          } else{
+              ApexPages.addmessage(new ApexPages.message(ApexPages.severity.CONFIRM,'You page :'));
+				count = String.valueOf(counter);
+
+          }
+        if (query != null){
+            selectSearch();
+        }
+        return null;
+      }
+
+    
+    public Integer getTotal_size() { //total size table. For pagination
+      return total_size;
+   }
+    public Integer getPageNumber() { // number current page. Pagination
+      return counter/list_size + 1;
+   }
+  public Integer getTotalPages() { // Total pages.Pagination
+      if (math.mod(total_size, list_size) > 0) {
+         return total_size/list_size + 1;
+      } else {
+         return (total_size/list_size);
+      }
+   }   
+    
+    
+    public void addProduct() {// add product method
+        try{
+        Product__c added = new  Product__c( Name = inName, Price__c = inPrice,
+                                           Quantity__c = inQuantity, Type__c = inType,
+                                           Date_Added__c = inDateAdded, Release_Date__c = inReleaseDate /*Product_Availability__c = inAvailble*/ );
+            
+
+        	insert added;
+            ApexPages.addmessage(new ApexPages.message(ApexPages.severity.CONFIRM, 'Success! Your product has been added.'));
+            inDateAdded = null;
+            inReleaseDate = null;
+            inPrice = null;
+            inQuantity = null;
+            inName = null;
+            inType = null;
+
+        } catch (Exception ex){
+           // detectMess = true;
+       		ApexPages.addmessage(new ApexPages.message(ApexPages.severity.ERROR,'Relase date should be later than today. Please, edit this field.'));
+            inDateAdded = null;
+            inReleaseDate = null;
+    	}
+    }
+  // delete methods
+     public void delNameProduct() {
+         detectMess = false;
+         if(!String.isBlank(delName)){
+         delete [SELECT ID From Product__c WHERE Name = :delName LIMIT 10000];
+         ApexPages.addmessage(new ApexPages.message(ApexPages.severity.CONFIRM, 'Success! Your product(s) has been deleted.'));
+         } else {
+             detectMess = true;
+         ApexPages.addmessage(new ApexPages.message(ApexPages.severity.WARNING, 'Please enter name in delete field')); 
+         }
+     }
+    
+     public void delDateProduct() {
+         detectMess = false;
+         if(delDate != null){
+         delete [SELECT ID From Product__c WHERE Date_Added__c = :delDate LIMIT 10000];
+         ApexPages.addmessage(new ApexPages.message(ApexPages.severity.CONFIRM, 'Success! Your product(s) has been deleted.'));
+         delDate = null;
+         } else {
+            detectMess = true;
+         	ApexPages.addmessage(new ApexPages.message(ApexPages.severity.WARNING, 'Please enter date in delete field'));    
+         }
+
+     }
+                       
+
+   
+ 
+    public List<Product__c> productSearch;
+ 
+    public List<Product__c> getresults() {
+        return results;
+    }
+    
+    public void searchProductName(){
+        detectMess = false;
+        if (!String.isBlank(searchName)){   
+        	System.debug(searchName);
+        	query = ('SELECT Name, Price__c, Quantity__c, Type__c, Date_Added__c, Release_Date__c, Product_Availability__c ' +
+        	'FROM Product__c ' +
+        	'WHERE Name LIKE \'%' + searchName + '%\''+         
+        	'ORDER BY ' + sortOrder + ' ' + sortDirection + ' ' +
+        	'LIMIT '+ lim + ' ' +
+        	'OFFSET ' + count );
+            getProducts();
+            total_size = database.countQuery('SELECT count() FROM Product__c WHERE Name LIKE \'%' + searchName + '%\''); // recount totalsize
+            
+        }  else {
+            detectMess = true;
+            ApexPages.addmessage(new ApexPages.message(ApexPages.severity.WARNING,'Please, enter search name or press "Jump to full table".'));
+        }
+        }
+    
+    
+      
+     public void goFullTable(){ // full table button. Just fill main list and pagination value for default
+         query = null;
+         counter = 0;
+         list_size = 5;
+         total_size = 0;
+         getProducts();
+     }    
+    
+    
+
+
+    
+    public void searchProductDate(){
+        
+
+        searchName = '';
+        detectMess = false;
+        if(FromDate != null && ToDate != null){
+            
+        query = ('SELECT Name, Price__c, Quantity__c, Type__c, Date_Added__c, Release_Date__c, Product_Availability__c ' +
+        'FROM Product__c ' +
+        'WHERE Date_Added__c > :FromDate AND Date_Added__c < :ToDate ' +          
+        'ORDER BY ' + sortOrder + ' ' + sortDirection + ' ' +
+        'LIMIT '+ lim + ' ' +
+        'OFFSET ' + count );
+        getProducts();
+        total_size = database.countQuery('SELECT count() FROM Product__c WHERE Date_Added__c > :FromDate AND Date_Added__c < :ToDate');        
+
+            
+            }  else {
+            detectMess = true;
+            ApexPages.addmessage(new ApexPages.message(ApexPages.severity.WARNING,'Please, enter from and to Added Date or press "Jump to full table".'));
+        }
+        }
+           
+    
+    //save changes method
+       public void saveEdit() {
+           //detectMess = false;
+        try{
+      		
+    		update results;
+            ApexPages.addmessage(new ApexPages.message(ApexPages.severity.CONFIRM, 'Success! Save completed.'));
+
+        } catch (Exception ex){
+           // detectMess = true;
+       		ApexPages.addmessage(new ApexPages.message(ApexPages.severity.ERROR,'Please, enter editeble value in any field. Relase date should be later than today.'));
+    }
+    }
+ 
+    // methods for change sort directon.
+    
+    public void sortByName() {
+           if(sortDirection == 'asc')
+        {
+            sortDirection = 'desc';
+        }
+        else if(sortDirection == 'desc')
+        {
+            sortDirection = 'asc';
+        }
+    	this.sortOrder = 'Name';
+        
+        if (query != null){
+            selectSearch();
+        }
+
+}
+    
+    public void sortByPrice() {
+           if(sortDirection == 'asc')
+        {
+            sortDirection = 'desc';
+        }
+        else if(sortDirection == 'desc')
+        {
+            sortDirection = 'asc';
+        }
+    	this.sortOrder = 'Price__c';
+        
+        if (query != null){
+            selectSearch();
+        }
+
+}
+     public void sortByQuantity() {
+           if(sortDirection == 'asc')
+        {
+            sortDirection = 'desc';
+        }
+        else if(sortDirection == 'desc')
+        {
+            sortDirection = 'asc';
+        }
+    	this.sortOrder = 'Quantity__c';
+         
+         if (query != null){
+            selectSearch();
+        }
+
+}
+     public void sortByType() {
+           if(sortDirection == 'asc')
+        {
+            sortDirection = 'desc';
+        }
+        else if(sortDirection == 'desc')
+        {
+            sortDirection = 'asc';
+        }
+    	this.sortOrder = 'Type__c';
+         
+         if (query != null){
+            selectSearch();
+        }
+
+}
+      public void sortByDateAdded() {
+           if(sortDirection == 'asc')
+        {
+            sortDirection = 'desc';
+        }
+        else if(sortDirection == 'desc')
+        {
+            sortDirection = 'asc';
+        }
+    	this.sortOrder = 'Date_Added__c';
+          
+          if (query != null){
+            selectSearch();
+        }
+
+}
+        public void sortByRelaseDate() {
+           if(sortDirection == 'asc')
+        {
+            sortDirection = 'desc';
+        }
+        else if(sortDirection == 'desc')
+        {
+            sortDirection = 'asc';
+        }
+    	this.sortOrder = 'Release_Date__c';
+            
+            if (query != null){
+            selectSearch();
+        }
+
+}
+            public void sortByAvaliability() {
+           if(sortDirection == 'asc')
+        {
+            sortDirection = 'desc';
+        }
+        else if(sortDirection == 'desc')
+        {
+            sortDirection = 'asc';
+        }
+    	this.sortOrder = 'Product_Availability__c';
+                
+                if (query != null){
+            selectSearch();
+        }
+
+}
+    // method for customs size table set
+    public void rowSizeSet() {
+        detectMess = false;
+        if(rowSize > 2 && rowSize < 51){
+        list_size = rowSize;
+        lim = String.valueOf(rowSize);
+        getTotalPages();
+        } else { 
+            detectMess = true;
+            ApexPages.addmessage(new ApexPages.message(ApexPages.severity.ERROR,'Please select size from 3 to 50'));
+        }
+        if (query != null){
+            selectSearch();
+        }
+    }
+    
+    
+}

@@ -1,0 +1,223 @@
+<apex:page controller="ProductInfoController" docType="html-5.0">
+    
+<apex:slds />
+  <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" lang="en"> 
+  <head>
+  <link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css"  rel="stylesheet" type="text/css"/>
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js"></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js"></script>  
+  <apex:stylesheet value="{!URLFOR($Resource.fontawesome,'/fontawesome-free-5.11.2-web/css/fontawesome.css')}"/>
+  </head> 
+    
+      
+  <style>
+    /* This is for the full screen DIV */
+    .popupBackground {
+        /* Background color */
+        background-color:black;
+        opacity: 0.20;
+        filter: alpha(opacity = 20);
+   
+        /* Dimensions */
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        z-index: 998;
+        position: absolute;
+       
+        /* Mouse */
+        cursor:wait;
+    }
+
+    /* This is for the message DIV */
+    .PopupPanel {
+
+        /* Dimensions */
+        left: 50%;
+        top: 50%;
+        height: 50px;
+        margin-top: -25px;
+        z-index: 999;
+        position: fixed;
+       
+        /* Mouse */
+        cursor:pointer;
+    }
+</style>  
+
+<!--Loading block-->        
+<apex:actionStatus id="statusSaveTrip" stopText="">
+    <apex:facet name="start">
+        <div>
+            <div class="popupBackground" />
+            <div class="PopupPanel">
+                <table border="0" width="100%" height="100%">
+                    <tr>
+                        <td align="center"><img src="{!$Resource.loader}"/></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </apex:facet>
+</apex:actionStatus>
+       
+      
+<apex:form id="formlevel">      
+<apex:pageBlock title="Products" id="prod_list" mode="inlineedit">
+        <apex:pageMessages id="showmsg"></apex:pageMessages>
+            <apex:outputPanel id="myPanel"> 
+             <!--Main table-->
+                <!--apex:outputText value="This tables with products. You can sort table in two ways with any columns(use table header). You can edit any field with double click and save button. You can select pages with pagination buttons or pages field and Go button. You can set table size with rows field and Set button:"/-->
+            <apex:pageBlockTable value="{!Products}" var="Item" styleClass="slds-table slds-table_bordered slds-table_edit slds-table_fixed-layout slds-table_resizable-cols">  
+                 <apex:column >
+                     <apex:facet name="header">
+                            <apex:commandLink action="{! sortByName }"  reRender="prod_list" status="statusSaveTrip" > Product
+                            </apex:commandLink>        
+                       </apex:facet>
+                    <apex:outputField value="{!Item.Name}">
+                        <apex:inlineEditSupport changedStyleClass="dirtyField" event="ondblclick" resetFunction="resetInlineEdit"/>
+                    </apex:outputField>
+                </apex:column>
+                
+                <apex:column >
+                     <apex:facet name="header">
+                            <apex:commandLink action="{! sortByPrice }"  reRender="prod_list" status="statusSaveTrip" > Price
+                            </apex:commandLink>        
+                       </apex:facet>
+                    <apex:outputField value="{!Item.Price__c}">
+                        <apex:inlineEditSupport changedStyleClass="dirtyField" event="ondblclick" resetFunction="resetInlineEdit"/>
+                    </apex:outputField>
+                </apex:column>
+                
+                 <apex:column >
+                     <apex:facet name="header">
+                            <apex:commandLink action="{! sortByQuantity }"  reRender="prod_list" status="statusSaveTrip" > Quantity
+                            </apex:commandLink>        
+                       </apex:facet>
+                    <apex:outputField value="{!Item.Quantity__c}">
+                        <apex:inlineEditSupport changedStyleClass="dirtyField" event="ondblclick" resetFunction="resetInlineEdit"/>
+                    </apex:outputField>
+                </apex:column>
+
+       			<apex:column >
+                       <apex:facet name="header">
+                            <apex:commandLink action="{! sortByType }"  reRender="prod_list" status="statusSaveTrip" > Type
+                            </apex:commandLink>        
+                       </apex:facet>
+                    <apex:outputField value="{!Item.Type__c}">
+                        <apex:inlineEditSupport changedStyleClass="dirtyField" event="ondblclick" resetFunction="resetInlineEdit"/>
+                    </apex:outputField>
+                </apex:column>
+
+                <apex:column >
+                      <apex:facet name="header">
+                            <apex:commandLink action="{! sortByDateAdded }"  reRender="prod_list" status="statusSaveTrip" > Date Added
+                            </apex:commandLink>        
+                       </apex:facet>
+                    <apex:outputField value="{!Item.Date_Added__c}">
+                        <apex:inlineEditSupport changedStyleClass="dirtyField" event="ondblclick" resetFunction="resetInlineEdit"/>
+                    </apex:outputField>
+                </apex:column>
+              
+                <apex:column >
+                        <apex:facet name="header">
+                            <apex:commandLink action="{! sortByRelaseDate }"  reRender="prod_list" status="statusSaveTrip" > Release Date
+                            </apex:commandLink>        
+                       </apex:facet>
+                    <apex:outputField value="{!Item.Release_Date__c}">
+                        <apex:inlineEditSupport changedStyleClass="dirtyField" event="ondblclick" resetFunction="resetInlineEdit"/>
+                    </apex:outputField>
+                </apex:column>
+                <apex:column value="{!Item.Product_Availability__c}">
+                       <apex:facet name="header">
+                            <apex:commandLink action="{! sortByAvaliability }"  reRender="prod_list" status="statusSaveTrip" > Availability
+                            </apex:commandLink>        
+                       </apex:facet>
+                </apex:column>
+               
+
+            <apex:facet name="footer">Showing Page : {!pageNumber} of {!totalPages} </apex:facet>
+            </apex:pageBlockTable>
+            </apex:outputPanel>
+        
+         <div class = "slds-grid slds-grid_align-spread">
+         <div class = "slds-col">
+        	<apex:commandButton action="{!saveEdit}" id="saveButton" value="Save changes" styleClass="slds-button slds-button_brand" style="width:230px;"/>
+       	 </div>
+         <div class = "slds-col">   
+        	<apex:outputPanel id="myButtons">    
+        	<apex:commandButton action="{!Beginning}" title="Beginning" disabled="{!disablePrevious}" value="<<" reRender="myPanel,myButtons" styleClass="slds-button slds-button_brand" status="statusSaveTrip" />
+        	<apex:commandButton action="{!Previous}" title="Previous" disabled="{!disablePrevious}" value="<"  reRender="myPanel,myButtons" styleClass="slds-button slds-button_brand" status="statusSaveTrip" />        
+        	<apex:commandButton action="{!Next}" title="Next" disabled="{!disableNext}" value=">"  reRender="myPanel,myButtons" styleClass="slds-button slds-button_brand" status="statusSaveTrip"/>
+        	<apex:commandButton action="{!End}" title="End" disabled="{!disableNext}" value=">>"  reRender="myPanel,myButtons" styleClass="slds-button slds-button_brand" status="statusSaveTrip" />
+        	</apex:outputPanel>
+         </div>
+         <div class = "slds-col">
+        	<apex:inputText label="Go to page:" value="{!goPage}" html-placeholder="Page" styleClass="slds-input" style="width:70px;"/>
+        	<apex:commandButton action="{!goToPage}" value="Go" html-placeholder="Page number" styleClass="slds-button slds-button_brand" status="statusSaveTrip" rerender="formlevel"/>  
+            <apex:outputPanel id="rowSize"> 
+        	<apex:inputText value="{!rowSize}" html-placeholder="Size" styleClass="slds-input" style="width:70px;"/>
+            <apex:commandButton action="{!rowSizeSet}" value="Set" html-placeholder="Size" styleClass="slds-button slds-button_brand" status="statusSaveTrip" rerender="formlevel"/> 
+            </apex:outputPanel>
+         </div>    
+             
+         </div>   
+</apex:pageBlock>
+         
+        <!--Search block-->
+        <apex:pageBlock title="Search" id="search_list">
+ <!--apex:outputText value="Fill Name or Date Added (From: and To: date) fields for search products. Press Jump-to-full-table button for return to full table:"/--> 
+        <div class = "slds-grid slds-grid_align-spread">
+                <div class = "slds-col slds-grid">
+                   <!--apex:outputText value="Name for search:" styleClass="slds-col"/--> 
+                    <apex:inputText label="Name for search:"  value="{!searchName}" html-placeholder="Name" styleClass="slds-input" />
+                    <apex:commandButton action="{!searchProductName}" value="Search" styleClass="slds-button slds-button_brand" status="statusSaveTrip" rerender="formlevel"/>
+                </div>
+            	<div class = "slds-col slds-grid">
+              <apex:commandButton action="{!goFullTable}" value="Jump to full table" styleClass="slds-button slds-button_brand" status="statusSaveTrip" rerender="formlevel"/>
+                </div>
+                 <div class = "slds-col slds-grid">                     
+                   <!--apex:outputText value="Date for search:" styleClass="search-elements"/-->   
+                   <apex:input type="date" id="from" label="From:"  value="{!fromDate}"    html-placeholder="From" styleClass="slds-input"/>  
+                   <apex:input type="date" label="To:"  value="{!toDate}" id="to" html-placeholder="To" styleClass="slds-input"/>  
+                   <apex:commandButton action="{!searchProductDate}" value="Search" styleClass="slds-button slds-button_brand" status="statusSaveTrip" rerender="formlevel"/>   
+                     
+                 </div> 
+            </div>     
+      </apex:pageBlock>
+<!--ADD block-->
+<apex:pageBlock title="Add">
+   <!--apex:outputText value="Fill Name, Price, Quantity, Type, Date Added and Relase Date field for Add product:"/--> 
+               <div class = "slds-grid slds-grid_align-spread">
+                   <apex:inputText label="Product Name:"  value="{!inName}" html-placeholder="Name" styleClass="slds-input"/>  
+                   <apex:inputText label="Price:" value="{!inPrice}" html-placeholder="Price" styleClass="slds-input"/>    
+                   <apex:inputText label="Quantity:" value="{!inQuantity}" html-placeholder="Quantity" styleClass="slds-input"/>
+                   <apex:inputText label="Type:" value="{!inType}" html-placeholder="Type" styleClass="slds-input"/>
+                   <apex:input type="date"  label="Date Added:" value="{!inDateAdded}"  html-placeholder="Date Added" styleClass="slds-input" />
+                   <apex:input type="date"  label="Release Date:" value="{!inReleaseDate}"  html-placeholder="Release Date" styleClass="slds-input"/>
+                   <!--apex:inputCheckbox label="Product Availble:" value="{!inAvailble}"/-->
+                   <apex:commandButton action="{!addProduct}" value="Add" styleClass="slds-button slds-button_success" status="statusSaveTrip" rerender="formlevel"/>                
+    			</div>
+</apex:pageBlock>
+      
+<!--Delete block-->      
+<apex:pageBlock title="Delete">
+    <!--apex:outputText value="Fill Name or Date Added field for delete product:"/--> 
+    			<div class = "slds-grid slds-grid_align-spread">
+                <div class = "slds-col slds-grid">
+                   <apex:inputText label="Name:"  value="{!delName}" html-placeholder="Name" styleClass="slds-input"/>
+                   <apex:commandButton action="{!delNameProduct}" value="Delete" onclick="return confirm('You try delete product! It is irreversible. Are you sure?')" styleclass="slds-button slds-button_destructive"/>
+                   </div>
+                 <div class = "slds-col slds-grid"> 
+                   <apex:input type="date" label="Date:" value="{!delDate}" html-placeholder="Added Date" styleClass="slds-input"/>
+                   <apex:commandButton action="{!delDateProduct}" value="Delete" onclick="return confirm('You try delete product! It is irreversible. Are you sure?')" styleclass="slds-button slds-button_destructive"/>                   
+         
+     			</div>
+             
+    </div> 
+    <apex:pageMessages id="pageMessages" />
+</apex:pageBlock>
+</apex:form>     
+</html>
+</apex:page>

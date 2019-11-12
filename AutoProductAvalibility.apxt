@@ -1,0 +1,10 @@
+trigger AutoProductAvalibility on Product__c (before insert, before update) {
+    for(product__c prod: Trigger.new){
+        If (prod.Quantity__c > 0){
+           prod.Product_Availability__c = true;
+        }else{
+             prod.Product_Availability__c = false;
+       
+    }
+}
+}
